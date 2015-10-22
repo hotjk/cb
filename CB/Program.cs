@@ -11,28 +11,32 @@ namespace CB
     {
         static void Main(string[] args)
         {
-            var breaker = new TestBreaker(new CircuitBreaker(1, TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(500)));
-            foreach(var i in Enumerable.Range(0,100))
+            var breaker = new CircuitBreaker(2, TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(500));
+            breaker.OnClose(() => { Console.WriteLine("Close"); })
+                    .OnHalfOpen(() => { Console.WriteLine("HalfOpen");  })
+                    .OnOpen(() => {  Console.WriteLine("Open"); });
+
+            foreach (var i in Enumerable.Range(0,10000000))
             {
-                TestCase(breaker);
-                Console.WriteLine();
+                TestCaseAsync(breaker);
+                Thread.Sleep(10);
             }
         }
 
         private static Random random = new Random();
-        private static void TestCase(TestBreaker breaker)
+
+        private static void TestCase(CircuitBreaker breaker)
         {
             try
             {
                 string result;
-
                 if (random.Next(10) == 0)
                 {
-                    result = breaker.Instance.WithSyncCircuitBreaker(() => { throw new Exception("Test"); return "Test"; });
+                    result = breaker.WithSyncCircuitBreaker(() => { throw new Exception("Test"); return "Test"; });
                 }
                 else
                 {
-                    result = breaker.Instance.WithSyncCircuitBreaker(() => "Test");
+                    result = breaker.WithSyncCircuitBreaker(() => { Task.Delay(100); return "Test"; });
                 }
                 Console.WriteLine(result);
             }
@@ -40,29 +44,29 @@ namespace CB
             {
                 Console.WriteLine(ex.Message);
             }
-            Thread.Sleep(100);
+            Thread.Sleep(1000);
         }
-    }
-    
 
-    public class TestBreaker
-    {
-        public CountdownEvent HalfOpenLatch { get; private set; }
-        public CountdownEvent OpenLatch { get; private set; }
-        public CountdownEvent ClosedLatch { get; private set; }
-        public CircuitBreaker Instance { get; private set; }
-
-        public TestBreaker(CircuitBreaker instance)
+        private static async void TestCaseAsync(CircuitBreaker breaker)
         {
-            HalfOpenLatch = new CountdownEvent(1);
-            OpenLatch = new CountdownEvent(1);
-            ClosedLatch = new CountdownEvent(1);
-            Instance = instance;
-            Instance.OnClose(() => { Console.WriteLine("Close"); if (!ClosedLatch.IsSet) ClosedLatch.Signal(); })
-                    .OnHalfOpen(() => { Console.WriteLine("HalfOpen"); if (!HalfOpenLatch.IsSet) HalfOpenLatch.Signal(); })
-                    .OnOpen(() => { Console.WriteLine("Open"); if (!OpenLatch.IsSet) OpenLatch.Signal(); });
+            try
+            {
+                await Task.Delay(100);
+                string result;
+                if (random.Next(10) == 0)
+                {
+                    result = await breaker.WithCircuitBreaker<string>(() => { throw new Exception("Business Exception"); Task.FromResult("Test"); });
+                }
+                else
+                {
+                    result = await breaker.WithCircuitBreaker<string>(() => Task.FromResult("Test"));
+                }
+                Console.WriteLine(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
-
-
     }
 }
