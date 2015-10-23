@@ -11,16 +11,11 @@ namespace CB
     /// Signals that a method has been invoked at an illegal or
     /// inappropriate time.
     /// </summary>
-    public class IllegalStateException : AkkaException
+    public class IllegalStateException:Exception
     {
         public IllegalStateException(string message) : base(message)
         {
 
-        }
-
-        protected IllegalStateException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
         }
     }
 }

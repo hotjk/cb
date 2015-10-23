@@ -11,12 +11,12 @@ namespace CB
     {
         static void Main(string[] args)
         {
-            var breaker = new CircuitBreaker(2, TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(500));
+            var breaker = new CircuitBreaker(3, TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(500));
             breaker.OnClose(() => { Console.WriteLine("Close"); })
                     .OnHalfOpen(() => { Console.WriteLine("HalfOpen");  })
                     .OnOpen(() => {  Console.WriteLine("Open"); });
 
-            foreach (var i in Enumerable.Range(0,10000000))
+            while(true)
             {
                 TestCaseAsync(breaker);
                 Thread.Sleep(10);
@@ -30,7 +30,7 @@ namespace CB
             try
             {
                 string result;
-                if (random.Next(10) == 0)
+                if (random.Next(2) == 0)
                 {
                     result = breaker.WithSyncCircuitBreaker(() => { throw new Exception("Test"); return "Test"; });
                 }

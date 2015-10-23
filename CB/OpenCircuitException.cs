@@ -10,7 +10,7 @@ namespace CB
     /// <summary>
     /// Exception throws when CircuitBreaker is open
     /// </summary>
-    public class OpenCircuitException : AkkaException
+    public class OpenCircuitException : Exception
     {
         public OpenCircuitException() : base("Circuit Breaker is open; calls are failing fast") { }
 
@@ -21,11 +21,6 @@ namespace CB
 
         public OpenCircuitException(string message, Exception innerException)
             : base(message, innerException)
-        {
-        }
-
-        protected OpenCircuitException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
         {
         }
     }
